@@ -135,7 +135,7 @@ class _RecommendedSchoolsScreenState extends State<RecommendedSchoolsScreen> {
                               Text(
                                   'Overall Performance: ${_recommendedSchools[index]['performance']}'),
                               Text(
-                                  'Overall Performance Grade: ${_recommendedSchools[index]['performance_grade']}'),
+                                  'Performance Grade: ${_recommendedSchools[index]['performance_grade']}'),
                             ],
                           ),
                         ),

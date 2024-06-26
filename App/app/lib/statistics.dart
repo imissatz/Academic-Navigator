@@ -90,19 +90,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       List<Map<String, dynamic>> schoolData2021 =
           _csvData2021.where((row) => row['School'] == schoolName).toList();
 
-      if (schoolData2023.isNotEmpty) {
+      if (schoolData2023.isNotEmpty ||
+          schoolData2022.isNotEmpty ||
+          schoolData2021.isNotEmpty) {
         tables.add(
-          _buildSchoolYearTable(schoolName, schoolData2023, 2023),
-        );
-      }
-      if (schoolData2022.isNotEmpty) {
-        tables.add(
-          _buildSchoolYearTable(schoolName, schoolData2022, 2022),
-        );
-      }
-      if (schoolData2021.isNotEmpty) {
-        tables.add(
-          _buildSchoolYearTable(schoolName, schoolData2021, 2021),
+          _buildSchoolTable(schoolName, schoolData2023, schoolData2022,
+              schoolData2021),
         );
       }
     }
@@ -110,22 +103,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return tables;
   }
 
-  Widget _buildSchoolYearTable(
-      String schoolName, List<Map<String, dynamic>> schoolData, int year) {
+  Widget _buildSchoolTable(
+      String schoolName,
+      List<Map<String, dynamic>> schoolData2023,
+      List<Map<String, dynamic>> schoolData2022,
+      List<Map<String, dynamic>> schoolData2021) {
     return Container(
       padding: EdgeInsets.all(16),
       child: Card(
         child: Column(
           children: [
             Text(
-              '$schoolName - $year',
+              schoolName,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columns: _buildColumns(),
-                rows: _generateTableRows(schoolData),
+                rows: _generateTableRows(
+                    schoolData2023, schoolData2022, schoolData2021),
               ),
             ),
           ],
@@ -137,30 +134,54 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   List<DataColumn> _buildColumns() {
     return [
       DataColumn(label: Text('Subject')),
-      DataColumn(label: Text('GPA')),
-      DataColumn(label: Text('Grade')),
-      DataColumn(label: Text('Year')),
+      DataColumn(label: Text('GPA 2023')),
+      DataColumn(label: Text('Grade 2023')),
+      DataColumn(label: Text('GPA 2022')),
+      DataColumn(label: Text('Grade 2022')),
+      DataColumn(label: Text('GPA 2021')),
+      DataColumn(label: Text('Grade 2021')),
     ];
   }
 
-  List<DataRow> _generateTableRows(List<Map<String, dynamic>> schoolData) {
+  List<DataRow> _generateTableRows(List<Map<String, dynamic>> data2023,
+      List<Map<String, dynamic>> data2022, List<Map<String, dynamic>> data2021) {
     List<DataRow> rows = [];
+    Set<String> subjects = {};
 
-    for (var row in schoolData) {
-      for (String subject in row.keys) {
-        if (subject != 'School' && subject != 'Year') {
-          try {
-            double gpa = double.parse(row[subject].toString());
-            rows.add(DataRow(cells: [
-              DataCell(Text(subject)),
-              DataCell(Text(gpa.toStringAsFixed(2))),
-              DataCell(Text(_gradeGpa(gpa))),
-              DataCell(Text(row['Year'].toString())),
-            ]));
-          } catch (e) {
-            // Skip invalid GPA values
-          }
-        }
+    for (var row in data2023) {
+      subjects.addAll(row.keys.where((key) => key != 'School' && key != 'Year'));
+    }
+    for (var row in data2022) {
+      subjects.addAll(row.keys.where((key) => key != 'School' && key != 'Year'));
+    }
+    for (var row in data2021) {
+      subjects.addAll(row.keys.where((key) => key != 'School' && key != 'Year'));
+    }
+
+    for (var subject in subjects) {
+      double? gpa2023 = data2023.isNotEmpty
+          ? double.tryParse(
+              data2023.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+          : null;
+      double? gpa2022 = data2022.isNotEmpty
+          ? double.tryParse(
+              data2022.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+          : null;
+      double? gpa2021 = data2021.isNotEmpty
+          ? double.tryParse(
+              data2021.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+          : null;
+
+      if (gpa2023 != null || gpa2022 != null || gpa2021 != null) {
+        rows.add(DataRow(cells: [
+          DataCell(Text(subject)),
+          DataCell(Text(gpa2023 != null ? gpa2023.toStringAsFixed(2) : '')),
+          DataCell(Text(gpa2023 != null ? _gradeGpa(gpa2023) : '')),
+          DataCell(Text(gpa2022 != null ? gpa2022.toStringAsFixed(2) : '')),
+          DataCell(Text(gpa2022 != null ? _gradeGpa(gpa2022) : '')),
+          DataCell(Text(gpa2021 != null ? gpa2021.toStringAsFixed(2) : '')),
+          DataCell(Text(gpa2021 != null ? _gradeGpa(gpa2021) : '')),
+        ]));
       }
     }
 
@@ -179,9 +200,6 @@ void main() {
     ),
   ));
 }
-
-
-
 
 
 
@@ -279,19 +297,12 @@ void main() {
 //       List<Map<String, dynamic>> schoolData2021 =
 //           _csvData2021.where((row) => row['School'] == schoolName).toList();
 
-//       if (schoolData2023.isNotEmpty) {
+//       if (schoolData2023.isNotEmpty ||
+//           schoolData2022.isNotEmpty ||
+//           schoolData2021.isNotEmpty) {
 //         tables.add(
-//           _buildSchoolYearTable(schoolName, schoolData2023, 2023),
-//         );
-//       }
-//       if (schoolData2022.isNotEmpty) {
-//         tables.add(
-//           _buildSchoolYearTable(schoolName, schoolData2022, 2022),
-//         );
-//       }
-//       if (schoolData2021.isNotEmpty) {
-//         tables.add(
-//           _buildSchoolYearTable(schoolName, schoolData2021, 2021),
+//           _buildSchoolTable(schoolName, schoolData2023, schoolData2022,
+//               schoolData2021),
 //         );
 //       }
 //     }
@@ -299,22 +310,26 @@ void main() {
 //     return tables;
 //   }
 
-//   Widget _buildSchoolYearTable(
-//       String schoolName, List<Map<String, dynamic>> schoolData, int year) {
+//   Widget _buildSchoolTable(
+//       String schoolName,
+//       List<Map<String, dynamic>> schoolData2023,
+//       List<Map<String, dynamic>> schoolData2022,
+//       List<Map<String, dynamic>> schoolData2021) {
 //     return Container(
 //       padding: EdgeInsets.all(16),
 //       child: Card(
 //         child: Column(
 //           children: [
 //             Text(
-//               '$schoolName - $year',
+//               schoolName,
 //               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
 //             ),
 //             SingleChildScrollView(
 //               scrollDirection: Axis.horizontal,
 //               child: DataTable(
 //                 columns: _buildColumns(),
-//                 rows: _generateTableRows(schoolData),
+//                 rows: _generateTableRows(
+//                     schoolData2023, schoolData2022, schoolData2021),
 //               ),
 //             ),
 //           ],
@@ -325,34 +340,54 @@ void main() {
 
 //   List<DataColumn> _buildColumns() {
 //     return [
-//       DataColumn(label: Text('School')),
 //       DataColumn(label: Text('Subject')),
-//       DataColumn(label: Text('GPA')),
-//       DataColumn(label: Text('Grade')),
-//       DataColumn(label: Text('Year')),
+//       DataColumn(label: Text('GPA 2023')),
+//       DataColumn(label: Text('Grade 2023')),
+//       DataColumn(label: Text('GPA 2022')),
+//       DataColumn(label: Text('Grade 2022')),
+//       DataColumn(label: Text('GPA 2021')),
+//       DataColumn(label: Text('Grade 2021')),
 //     ];
 //   }
 
-//   List<DataRow> _generateTableRows(List<Map<String, dynamic>> schoolData) {
+//   List<DataRow> _generateTableRows(List<Map<String, dynamic>> data2023,
+//       List<Map<String, dynamic>> data2022, List<Map<String, dynamic>> data2021) {
 //     List<DataRow> rows = [];
+//     Set<String> subjects = {};
 
-//     for (var row in schoolData) {
-//       for (String subject in row.keys) {
-//         if (subject != 'School' && subject != 'Year') {
-//           try {
-//             double gpa = double.parse(row[subject].toString());
-//             rows.add(DataRow(cells: [
-//               // DataCell(Text(row['School'].toString())),
-//               DataCell(Text(subject)),
-//               DataCell(Text(gpa.toStringAsFixed(2))),
-//               DataCell(Text(_gradeGpa(gpa))),
-//               DataCell(Text(row['Year'].toString())),
-//             ]));
-//           } catch (e) {
-//             // Skip invalid GPA values
-//           }
-//         }
-//       }
+//     for (var row in data2023) {
+//       subjects.addAll(row.keys.where((key) => key != 'School' && key != 'Year'));
+//     }
+//     for (var row in data2022) {
+//       subjects.addAll(row.keys.where((key) => key != 'School' && key != 'Year'));
+//     }
+//     for (var row in data2021) {
+//       subjects.addAll(row.keys.where((key) => key != 'School' && key != 'Year'));
+//     }
+
+//     for (var subject in subjects) {
+//       double? gpa2023 = data2023.isNotEmpty
+//           ? double.tryParse(
+//               data2023.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+//           : null;
+//       double? gpa2022 = data2022.isNotEmpty
+//           ? double.tryParse(
+//               data2022.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+//           : null;
+//       double? gpa2021 = data2021.isNotEmpty
+//           ? double.tryParse(
+//               data2021.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+//           : null;
+
+//       rows.add(DataRow(cells: [
+//         DataCell(Text(subject)),
+//         DataCell(Text(gpa2023 != null ? gpa2023.toStringAsFixed(2) : '')),
+//         DataCell(Text(gpa2023 != null ? _gradeGpa(gpa2023) : '')),
+//         DataCell(Text(gpa2022 != null ? gpa2022.toStringAsFixed(2) : '')),
+//         DataCell(Text(gpa2022 != null ? _gradeGpa(gpa2022) : '')),
+//         DataCell(Text(gpa2021 != null ? gpa2021.toStringAsFixed(2) : '')),
+//         DataCell(Text(gpa2021 != null ? _gradeGpa(gpa2021) : '')),
+//       ]));
 //     }
 
 //     return rows;

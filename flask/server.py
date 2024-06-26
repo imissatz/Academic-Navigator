@@ -14,7 +14,7 @@ with open('C:/Users/ISSA MASALA/Desktop/BACKUP/get_user_preferences.pkl', 'rb') 
     label_encoders, scaler, train_feature_matrix, train_df, knn_model = pickle.load(f)
 
 # Load the original dataset containing performance data
-original_df = pd.read_csv('C:/Users/ISSA MASALA/Desktop/BACKUP/school_dataset2.csv')
+original_df = pd.read_csv('C:/Users/ISSA MASALA/Desktop/BACKUP/school_dataset.csv')
 
 # Print columns of the original dataframe
 print("Original DataFrame columns:", original_df.columns)
@@ -42,6 +42,13 @@ def submit_data():
     # Ensure user_df columns match those used during model fitting
     print("user_df columns:", user_df.columns)
     print("train_feature_matrix columns:", train_feature_matrix.columns)
+
+    # Add dummy columns for performance_2021, performance_2022, performance_2023
+    for col in ['performance_2021', 'performance_2022', 'performance_2023']:
+        user_df[col] = 0
+
+    # Reorder columns to match the order in train_feature_matrix
+    user_df = user_df[train_feature_matrix.columns]
 
     # Use the k-NN model to find similar schools
     distances, indices = knn_model.kneighbors(user_df)
@@ -79,7 +86,7 @@ def preprocess_user_preferences(user_preferences, label_encoders, scaler):
     user_df.drop(columns=['location'], inplace=True)
 
     # Ensure columns are in the correct order and match the training set
-    ordered_columns = train_feature_matrix.columns
+    ordered_columns = [col for col in train_feature_matrix.columns if col in user_df.columns]
     user_df = user_df[ordered_columns]
 
     # Convert all columns to numeric type
@@ -117,27 +124,25 @@ def recommend_schools_based_on_preferences(recommended_schools, original_df, top
     print("Recommendations DataFrame columns before merge:", recommendations.columns)
 
     # Merge recommendations with the original dataframe to get the original performance data
+    performance_cols = ['School', 'performance']
     recommendations_with_performance = recommendations.merge(
-        original_df[['School', 'performance']], on='School', how='left'
+        original_df[performance_cols], on='School', how='left'
     )
     
     # Print columns of the merged dataframe
     print("Recommendations DataFrame columns after merge:", recommendations_with_performance.columns)
 
-    # Rename the performance column to avoid the x and y suffix issue
-    recommendations_with_performance.rename(columns={'performance_y': 'performance'}, inplace=True)
-
-    if 'performance' not in recommendations_with_performance.columns:
-        raise ValueError("The 'performance' column was not found in the merged DataFrame.")
-
-    # Drop duplicates and limit to the top 10 unique recommendations
+    # Ensure we use the performance from the original dataframe
+    recommendations_with_performance['performance'] = recommendations_with_performance['performance_y']
     unique_recommendations = recommendations_with_performance.drop_duplicates(subset=['School']).head(top_n)
 
-    # Add performance grade
+    # Add performance grades
     unique_recommendations['performance_grade'] = unique_recommendations['performance'].apply(performance_to_grade)
 
     return unique_recommendations[['School', 'performance', 'performance_grade']]
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
 
