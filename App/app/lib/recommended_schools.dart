@@ -136,6 +136,18 @@ class _RecommendedSchoolsScreenState extends State<RecommendedSchoolsScreen> {
                                   'Overall Performance: ${_recommendedSchools[index]['performance']}'),
                               Text(
                                   'Performance Grade: ${_recommendedSchools[index]['performance_grade']}'),
+                              Text(
+                                  'Performance 2023: ${_recommendedSchools[index]['performance_2023']}'),
+                              Text(
+                                  'Performance Grade: ${_recommendedSchools[index]['performance_grade_2023']}'),
+                              Text(
+                                  'Performance 2022: ${_recommendedSchools[index]['performance_2022']}'),
+                              Text(
+                                  'Performance Grade: ${_recommendedSchools[index]['performance_grade_2022']}'),
+                              Text(
+                                  'Performance 2021: ${_recommendedSchools[index]['performance_2021']}'),
+                              Text(
+                                  'Performance Grade: ${_recommendedSchools[index]['performance_grade_2021']}'),
                             ],
                           ),
                         ),

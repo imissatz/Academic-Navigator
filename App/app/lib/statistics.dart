@@ -66,7 +66,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Subject GPA Statistics'),
+        title: const Text('Subject GPA'),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
