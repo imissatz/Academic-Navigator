@@ -68,6 +68,8 @@ flutter:
     - C:/Users/ISSA MASALA/Desktop/BACKUP/App/app/assets/subject_gpa2023.csv
     - C:/Users/ISSA MASALA/Desktop/BACKUP/App/app/assets/subject_gpa2022.csv
     - C:/Users/ISSA MASALA/Desktop/BACKUP/App/app/assets/subject_gpa2021.csv
+    - C:/Users/ISSA MASALA/Desktop/BACKUP/App/app/assets/pictures/
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

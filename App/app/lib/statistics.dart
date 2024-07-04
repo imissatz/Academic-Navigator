@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
+import 'school_pictures.dart'; // Import the new screen
 
 class StatisticsScreen extends StatefulWidget {
-  final List<dynamic> recommendedSchools;
+  final List<Map<String, dynamic>> recommendedSchools;
 
   StatisticsScreen({required this.recommendedSchools});
 
@@ -32,8 +33,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     });
   }
 
-  Future<void> _loadCSVData(
-      String path, List<Map<String, dynamic>> dataList) async {
+  Future<void> _loadCSVData(String path, List<Map<String, dynamic>> dataList) async {
     final data = await rootBundle.loadString(path);
     List<List<dynamic>> csvTable = CsvToListConverter().convert(data);
 
@@ -67,6 +67,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Subject GPA'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.photo),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SchoolPicturesScreen(
+                    recommendedSchools: widget.recommendedSchools.map((school) {
+                      return {
+                        ...school,
+                        'imageFolderPath': 'assets/pictures/${school['School'].toString().replaceAll(' ', '_').toLowerCase()}'
+                      };
+                    }).toList().cast<Map<String, dynamic>>(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -94,8 +114,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           schoolData2022.isNotEmpty ||
           schoolData2021.isNotEmpty) {
         tables.add(
-          _buildSchoolTable(schoolName, schoolData2023, schoolData2022,
-              schoolData2021),
+          _buildSchoolTable(schoolName, schoolData2023, schoolData2022, schoolData2021),
         );
       }
     }
@@ -143,8 +162,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     ];
   }
 
-  List<DataRow> _generateTableRows(List<Map<String, dynamic>> data2023,
-      List<Map<String, dynamic>> data2022, List<Map<String, dynamic>> data2021) {
+  List<DataRow> _generateTableRows(
+      List<Map<String, dynamic>> data2023,
+      List<Map<String, dynamic>> data2022,
+      List<Map<String, dynamic>> data2021) {
     List<DataRow> rows = [];
     Set<String> subjects = {};
 
@@ -159,47 +180,59 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
 
     for (var subject in subjects) {
+      // Helper function to round and format the GPA values
+      String? formatGpa(dynamic value) {
+        if (value == null) return null;
+        double? parsedValue = double.tryParse(value.toString());
+        if (parsedValue == null) return null;
+        return parsedValue.toStringAsFixed(2);
+      }
+
       double? gpa2023 = data2023.isNotEmpty
-          ? double.tryParse(
-              data2023.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+          ? double.tryParse(data2023
+                  .firstWhere((row) => row.containsKey(subject), orElse: () => {subject: null})[subject]
+                  ?.toString() ??
+              '0')
           : null;
       double? gpa2022 = data2022.isNotEmpty
-          ? double.tryParse(
-              data2022.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+          ? double.tryParse(data2022
+                  .firstWhere((row) => row.containsKey(subject), orElse: () => {subject: null})[subject]
+                  ?.toString() ??
+              '0')
           : null;
       double? gpa2021 = data2021.isNotEmpty
-          ? double.tryParse(
-              data2021.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+          ? double.tryParse(data2021
+                  .firstWhere((row) => row.containsKey(subject), orElse: () => {subject: null})[subject]
+                  ?.toString() ??
+              '0')
           : null;
 
-      if (gpa2023 != null || gpa2022 != null || gpa2021 != null) {
-        rows.add(DataRow(cells: [
-          DataCell(Text(subject)),
-          DataCell(Text(gpa2023 != null ? gpa2023.toStringAsFixed(2) : '')),
-          DataCell(Text(gpa2023 != null ? _gradeGpa(gpa2023) : '')),
-          DataCell(Text(gpa2022 != null ? gpa2022.toStringAsFixed(2) : '')),
-          DataCell(Text(gpa2022 != null ? _gradeGpa(gpa2022) : '')),
-          DataCell(Text(gpa2021 != null ? gpa2021.toStringAsFixed(2) : '')),
-          DataCell(Text(gpa2021 != null ? _gradeGpa(gpa2021) : '')),
-        ]));
+      // Skip subjects where all GPA values are null
+      if (gpa2023 == null && gpa2022 == null && gpa2021 == null) {
+        continue;
       }
+
+      rows.add(
+        DataRow(
+          cells: [
+            DataCell(Text(subject)),
+            DataCell(Text(formatGpa(gpa2023) ?? 'N/A')),  // GPA 2023 rounded
+            DataCell(Text(_gradeGpa(gpa2023 ?? 0))),
+            DataCell(Text(formatGpa(gpa2022) ?? 'N/A')),  // GPA 2022 rounded
+            DataCell(Text(_gradeGpa(gpa2022 ?? 0))),
+            DataCell(Text(formatGpa(gpa2021) ?? 'N/A')),  // GPA 2021 rounded
+            DataCell(Text(_gradeGpa(gpa2021 ?? 0))),
+          ],
+        ),
+      );
     }
 
     return rows;
   }
 }
 
-void main() {
-  runApp(MaterialApp(
-    home: StatisticsScreen(
-      recommendedSchools: [
-        {'School': 'School A'},
-        {'School': 'School B'},
-        // Add more schools as needed
-      ],
-    ),
-  ));
-}
+
+
 
 
 
@@ -208,9 +241,10 @@ void main() {
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart' show rootBundle;
 // import 'package:csv/csv.dart';
+// import 'school_pictures.dart'; // Import the new screen
 
 // class StatisticsScreen extends StatefulWidget {
-//   final List<dynamic> recommendedSchools;
+//   final List<Map<String, dynamic>> recommendedSchools;
 
 //   StatisticsScreen({required this.recommendedSchools});
 
@@ -239,8 +273,7 @@ void main() {
 //     });
 //   }
 
-//   Future<void> _loadCSVData(
-//       String path, List<Map<String, dynamic>> dataList) async {
+//   Future<void> _loadCSVData(String path, List<Map<String, dynamic>> dataList) async {
 //     final data = await rootBundle.loadString(path);
 //     List<List<dynamic>> csvTable = CsvToListConverter().convert(data);
 
@@ -273,7 +306,27 @@ void main() {
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       appBar: AppBar(
-//         title: const Text('Subject GPA Statistics'),
+//         title: const Text('Subject GPA'),
+//         actions: [
+//           IconButton(
+//             icon: Icon(Icons.photo),
+//             onPressed: () {
+//               Navigator.push(
+//                 context,
+//                 MaterialPageRoute(
+//                   builder: (context) => SchoolPicturesScreen(
+//                     recommendedSchools: widget.recommendedSchools.map((school) {
+//                       return {
+//                         ...school,
+//                         'imageFolderPath': 'assets/pictures/${school['School'].toString().replaceAll(' ', '_').toLowerCase()}'
+//                       };
+//                     }).toList().cast<Map<String, dynamic>>(),
+//                   ),
+//                 ),
+//               );
+//             },
+//           ),
+//         ],
 //       ),
 //       body: _isLoading
 //           ? Center(child: CircularProgressIndicator())
@@ -301,8 +354,7 @@ void main() {
 //           schoolData2022.isNotEmpty ||
 //           schoolData2021.isNotEmpty) {
 //         tables.add(
-//           _buildSchoolTable(schoolName, schoolData2023, schoolData2022,
-//               schoolData2021),
+//           _buildSchoolTable(schoolName, schoolData2023, schoolData2022, schoolData2021),
 //         );
 //       }
 //     }
@@ -350,8 +402,10 @@ void main() {
 //     ];
 //   }
 
-//   List<DataRow> _generateTableRows(List<Map<String, dynamic>> data2023,
-//       List<Map<String, dynamic>> data2022, List<Map<String, dynamic>> data2021) {
+//   List<DataRow> _generateTableRows(
+//       List<Map<String, dynamic>> data2023,
+//       List<Map<String, dynamic>> data2022,
+//       List<Map<String, dynamic>> data2021) {
 //     List<DataRow> rows = [];
 //     Set<String> subjects = {};
 
@@ -366,43 +420,48 @@ void main() {
 //     }
 
 //     for (var subject in subjects) {
+//       // Helper function to round and format the GPA values
+//       String? formatGpa(dynamic value) {
+//         if (value == null) return null;
+//         double? parsedValue = double.tryParse(value.toString());
+//         if (parsedValue == null) return null;
+//         return parsedValue.toStringAsFixed(2);
+//       }
+
 //       double? gpa2023 = data2023.isNotEmpty
-//           ? double.tryParse(
-//               data2023.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+//           ? double.tryParse(data2023
+//                   .firstWhere((row) => row.containsKey(subject), orElse: () => {subject: null})[subject]
+//                   ?.toString() ??
+//               '0')
 //           : null;
 //       double? gpa2022 = data2022.isNotEmpty
-//           ? double.tryParse(
-//               data2022.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+//           ? double.tryParse(data2022
+//                   .firstWhere((row) => row.containsKey(subject), orElse: () => {subject: null})[subject]
+//                   ?.toString() ??
+//               '0')
 //           : null;
 //       double? gpa2021 = data2021.isNotEmpty
-//           ? double.tryParse(
-//               data2021.firstWhere((row) => row.containsKey(subject), orElse: () => {})[subject]?.toString() ?? '')
+//           ? double.tryParse(data2021
+//                   .firstWhere((row) => row.containsKey(subject), orElse: () => {subject: null})[subject]
+//                   ?.toString() ??
+//               '0')
 //           : null;
 
-//       rows.add(DataRow(cells: [
-//         DataCell(Text(subject)),
-//         DataCell(Text(gpa2023 != null ? gpa2023.toStringAsFixed(2) : '')),
-//         DataCell(Text(gpa2023 != null ? _gradeGpa(gpa2023) : '')),
-//         DataCell(Text(gpa2022 != null ? gpa2022.toStringAsFixed(2) : '')),
-//         DataCell(Text(gpa2022 != null ? _gradeGpa(gpa2022) : '')),
-//         DataCell(Text(gpa2021 != null ? gpa2021.toStringAsFixed(2) : '')),
-//         DataCell(Text(gpa2021 != null ? _gradeGpa(gpa2021) : '')),
-//       ]));
+//       rows.add(
+//         DataRow(
+//           cells: [
+//             DataCell(Text(subject)),
+//             DataCell(Text(formatGpa(gpa2023) ?? 'N/A')),  // GPA 2023 rounded
+//             DataCell(Text(_gradeGpa(gpa2023 ?? 0))),
+//             DataCell(Text(formatGpa(gpa2022) ?? 'N/A')),  // GPA 2022 rounded
+//             DataCell(Text(_gradeGpa(gpa2022 ?? 0))),
+//             DataCell(Text(formatGpa(gpa2021) ?? 'N/A')),  // GPA 2021 rounded
+//             DataCell(Text(_gradeGpa(gpa2021 ?? 0))),
+//           ],
+//         ),
+//       );
 //     }
 
 //     return rows;
 //   }
 // }
-
-// void main() {
-//   runApp(MaterialApp(
-//     home: StatisticsScreen(
-//       recommendedSchools: [
-//         {'School': 'School A'},
-//         {'School': 'School B'},
-//         // Add more schools as needed
-//       ],
-//     ),
-//   ));
-// }
-
